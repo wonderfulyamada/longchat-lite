@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "LongChat Lite",
+  "version": "0.3.0",
+  "description": "Reduces rendering load in long ChatGPT conversations and uses safe hard navigation between chats.",
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://chatgpt.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_title": "LongChat Lite"
+  }
+}

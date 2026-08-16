@@ -1,88 +1,59 @@
-# LongChat Lite
+# LongChat Lite v0.3.0
 
-長大化した ChatGPT の会話で、過去の会話ターンを非表示にし、ブラウザ側の描画負荷を軽減する**非公式ユーザースクリプト**です。プロジェクト名は **LongChat Lite** です。
+LongChat Lite is an unofficial Chrome extension that reduces rendering load in very long ChatGPT conversations.
 
-> **Unofficial project. This project is not affiliated with or endorsed by OpenAI. ChatGPT is a trademark of OpenAI.**
+This version moves away from Tampermonkey and runs as a Chrome Manifest V3 extension.
 
-## できること
+## Why the extension version?
 
-- 古い会話ターンを自動で非表示
-- 直近に残すターン数を `5 / 10 / 20 / 30 / 40 / 60` から選択
-- 表示中のターンに `content-visibility: auto` を適用
-- 軽量化の ON / OFF をワンクリックで切り替え
-- ChatGPT 内で別の会話へ移動したときに自動で再適用
-- 設定を `localStorage` に保存
+The userscript version worked well during normal use, but hard navigation between very large conversations required the script to be injected again after every page load.
 
-会話データそのものを削除するわけではありません。ブラウザ上で古いターンを非表示にしているだけです。
+v0.3.0 uses a Chrome content script with `run_at: document_start`, so LongChat Lite is injected by Chrome itself on each ChatGPT page load.
 
-## なぜ軽くなる？
+## Features
 
-長い会話では、ブラウザが大量のメッセージ要素をレイアウト・描画し続けることで、スクロールや入力が重くなる場合があります。
+- Hide older conversation turns
+- Keep only the latest 5 / 10 / 20 / 30 / 40 / 60 turns visible
+- `content-visibility` for visible turns
+- Safe Switch mode
+  - intercepts conversation-link clicks
+  - avoids ChatGPT's heavy SPA conversation swap
+  - uses a full page navigation instead
+- Initial-load rendering shield
+- No MutationObserver
+- Low-cost 3-second turn-count check
+- Persistent settings with `chrome.storage.local`
 
-LongChat Lite は古いターンを `display: none` にし、現在表示対象のターンにも `content-visibility: auto` を適用します。
+## Install
 
-また、v0.2.0 では `MutationObserver` による常時 DOM 監視をやめました。
+1. Extract the ZIP.
+2. Open Chrome.
+3. Go to `chrome://extensions/`.
+4. Turn on **Developer mode**.
+5. Click **Load unpacked**.
+6. Select the extracted `longchat-lite-extension-v0.3.0` folder.
+7. Disable the old Tampermonkey LongChat Lite script to avoid running both versions at once.
+8. Reload `https://chatgpt.com/`.
 
-代わりに **3秒ごとに会話ターン数だけを確認し、ターン数が変わった場合にだけ処理**します。これにより、ChatGPT が回答をストリーミングしている最中にスクリプト自身が大量の再処理を行うことを避けています。
+The bottom-right panel should show:
 
-## 動作環境
+`LONGCHAT LITE | ON | Keep 10 | Safe ON`
 
-- Chrome / Edge
-- Tampermonkey
-- `https://chatgpt.com/`
+## Notes
 
-Windows版 ChatGPT アプリ向けではありません。
+This is an unofficial project and is not affiliated with or endorsed by OpenAI.
 
-## インストール
+ChatGPT is a trademark of OpenAI.
 
-1. Chrome または Edge に Tampermonkey をインストール
-2. Tampermonkey で新しいユーザースクリプトを作成
-3. 初期コードをすべて削除
-4. [`longchat-lite.user.js`](./longchat-lite.user.js) の内容を貼り付け
-5. 保存
-6. `https://chatgpt.com/` を再読み込み
+LongChat Lite does not delete conversation data. It only changes how much of the conversation is rendered in the browser.
 
-Chrome の設定によっては、Tampermonkey の拡張機能設定で **「ユーザースクリプトを許可」** を ON にする必要があります。
+ChatGPT's UI can change at any time, which may break this extension.
 
-## 使い方
+## Development history
 
-ChatGPT を開くと、画面右下に小さなパネルが表示されます。
-
-- **ON / OFF**  
-  軽量化を切り替えます。
-- **Keep**  
-  直近に表示したまま残す会話ターン数を選びます。
-- **Apply**  
-  現在の設定を手動で再適用します。
-
-長大なチャットでは `Keep 10` または `Keep 20` が目安です。
-
-## 注意事項
-
-- ChatGPT の画面構造が変更されると動作しなくなる可能性があります。
-- 非公式ツールです。
-- OpenAI とは関係ありません。
-- 表示上は古い会話が消えますが、ChatGPT 側の会話データを削除しているわけではありません。
-- 不具合が起きた場合は、まず `OFF` にするか Tampermonkey 上でスクリプトを無効化してください。
-
-## 開発メモ
-
-### v0.1.x
-
-最初の実装では `MutationObserver` を使い、ChatGPT の DOM 変更を監視していました。
-
-しかし長文回答のストリーミング中にも監視が頻繁に発火し、軽量化スクリプト自身が追加負荷になる問題がありました。
-
-### v0.2.0
-
-常時 DOM 監視を廃止。
-
-- 3秒ごとの軽量チェック
-- ターン数が変わった場合だけ再処理
-- URL変更時のみ強制再適用
-
-という方式へ変更し、長大チャットでの操作負荷を大幅に抑えました。
+- v0.2.0: Tampermonkey userscript version.
+- v0.3.0: Migrated from Tampermonkey to a Chrome Manifest V3 extension.
 
 ## License
 
-MIT License
+MIT License. See `LICENSE`.
