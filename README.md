@@ -1,4 +1,6 @@
-# LongChat Lite v0.3.0
+# LongChat Lite
+
+Current version: v0.3.0
 
 LongChat Lite is an unofficial Chrome extension that reduces rendering load in very long ChatGPT conversations.
 
