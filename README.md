@@ -24,6 +24,41 @@ v0.3.0 uses a Chrome content script with `run_at: document_start`, so LongChat L
 - Low-cost 3-second turn-count check
 - Persistent settings with `chrome.storage.local`
 
+## How it works
+
+### Hide older conversation turns
+
+LongChat Lite hides older conversation turns in very long chats. The **Keep** setting lets you keep the latest `5 / 10 / 20 / 30 / 40 / 60` turns visible.
+
+This does not delete or modify any conversation data stored by ChatGPT. It only changes which turns are displayed in your browser.
+
+### Reduce off-screen rendering
+
+LongChat Lite applies `content-visibility` to the turns that remain visible. This allows the browser to reduce layout and paint work for content outside the viewport.
+
+### Safe Switch
+
+ChatGPT normally switches between chats using SPA navigation. Switching between very long conversations this way can temporarily cause high browser load.
+
+Safe Switch intercepts conversation-link clicks and uses a regular full-page navigation instead. This lets the browser discard the current page before loading the next chat, reducing peak load during the switch. Page transitions may feel slightly slower, but Safe Switch prioritizes reducing freezes on heavily loaded systems.
+
+### Initial-load rendering shield
+
+The content script runs at `document_start`. While a long conversation is loading, LongChat Lite temporarily suppresses rendering of the conversation body, applies the **Keep** limit, and then reveals it. This is intended to reduce the cost of rendering the full history once before hiding older turns.
+
+### Lightweight background checking
+
+LongChat Lite does not use `MutationObserver`. It performs only a lightweight turn-count check every three seconds, and does no additional processing when the number of turns has not changed.
+
+This approach replaced the continuous DOM monitoring used in the v0.1 series, after that monitoring itself was found to add load.
+
+## Settings
+
+- **ON / OFF** enables or disables conversation-turn hiding.
+- **Keep** selects how many recent turns remain visible. **Keep 5** or **Keep 10** is recommended for especially long chats.
+- **Safe Switch** enables or disables full-page navigation when opening another conversation.
+- **Apply** immediately reapplies the current settings to the conversation.
+
 ## Install
 
 1. Extract the ZIP.
