@@ -1,96 +1,60 @@
 # LongChat Lite
 
-Current version: v0.3.0
+ChatGPT の非常に長い会話をブラウザで読みやすくするための、非公式 Chrome 拡張機能です。古い発言を表示から隠し、会話を切り替える際には通常のページ移動を選べます。
 
-LongChat Lite is an unofficial Chrome extension that reduces rendering load in very long ChatGPT conversations.
+> **現状:** Manifest V3 の拡張機能として実装済みです。ChatGPT の画面構造に依存するため、ChatGPT 側の更新によって動作しなくなる可能性があります。これは個人プロジェクトであり、OpenAI とは提携・公認関係にありません。
 
-This version moves away from Tampermonkey and runs as a Chrome Manifest V3 extension.
+## 何をするものか
 
-## Why the extension version?
+長い会話を開いたり、別の長い会話へ切り替えたりする際のブラウザ負荷を抑えることを目的にしています。会話データを削除・変更するものではなく、ブラウザ上で表示する発言数を制限するだけです。
 
-The userscript version worked well during normal use, but hard navigation between very large conversations required the script to be injected again after every page load.
+## 実装されている機能
 
-v0.3.0 uses a Chrome content script with `run_at: document_start`, so LongChat Lite is injected by Chrome itself on each ChatGPT page load.
+- 最新の 5 / 10 / 20 / 30 / 40 / 60 ターンだけを表示
+- 残したターンに `content-visibility` を適用
+- 長い会話への切替時に通常のページ移動を使う「Safe Switch」
+- 初回読み込み時に発言表示を一時的に抑え、設定を適用してから表示
+- ON / OFF、表示ターン数、Safe Switch の設定をブラウザ内に保存
+- 右下パネルから設定を変更・再適用
 
-## Features
+Safe Switch は表示切替を速くする機能ではありません。ページ遷移が遅く感じる場合がありますが、重い会話の切替時に現在のページを先に破棄するための選択肢です。
 
-- Hide older conversation turns
-- Keep only the latest 5 / 10 / 20 / 30 / 40 / 60 turns visible
-- `content-visibility` for visible turns
-- Safe Switch mode
-  - intercepts conversation-link clicks
-  - avoids ChatGPT's heavy SPA conversation swap
-  - uses a full page navigation instead
-- Initial-load rendering shield
-- No MutationObserver
-- Low-cost 3-second turn-count check
-- Persistent settings with `chrome.storage.local`
+## インストール
 
-## How it works
+現在、拡張機能用の配布 ZIP はこのリポジトリでは提供していません。ソースから読み込む場合は次の手順です。
 
-### Hide older conversation turns
+1. このリポジトリを ZIP でダウンロードして展開するか、Git で取得します。
+2. Chrome で `chrome://extensions/` を開き、右上の「デベロッパー モード」を有効にします。
+3. 「パッケージ化されていない拡張機能を読み込む」を選び、`manifest.json` があるフォルダーを指定します。
+4. 旧 Tampermonkey 版を使っている場合は、二重実行を避けるため無効にします。
+5. `https://chatgpt.com/` を再読み込みします。
 
-LongChat Lite hides older conversation turns in very long chats. The **Keep** setting lets you keep the latest `5 / 10 / 20 / 30 / 40 / 60` turns visible.
+右下に `LONGCHAT LITE` のパネルが表示されれば読み込み済みです。
 
-This does not delete or modify any conversation data stored by ChatGPT. It only changes which turns are displayed in your browser.
+## 使い方
 
-### Reduce off-screen rendering
+- **ON / OFF:** 古いターンの非表示を切り替えます。
+- **Keep:** 画面に残す最新ターン数を選びます。特に長い会話では 5 または 10 が目安です。
+- **Safe ON / OFF:** 会話リンクの切替方法を選びます。
+- **Apply:** 現在開いている会話へすぐ設定を適用します。
 
-LongChat Lite applies `content-visibility` to the turns that remain visible. This allows the browser to reduce layout and paint work for content outside the viewport.
+## 技術概要
 
-### Safe Switch
+Chrome Manifest V3 の content script として `chatgpt.com` 上で動作します。会話ターンを DOM から見つけ、表示属性と CSS を切り替えます。設定には `chrome.storage.local` を使用します。継続的な `MutationObserver` は使わず、3 秒ごとの軽量なターン数確認で変更を検知します。
 
-ChatGPT normally switches between chats using SPA navigation. Switching between very long conversations this way can temporarily cause high browser load.
+## 制限事項
 
-Safe Switch intercepts conversation-link clicks and uses a regular full-page navigation instead. This lets the browser discard the current page before loading the next chat, reducing peak load during the switch. Page transitions may feel slightly slower, but Safe Switch prioritizes reducing freezes on heavily loaded systems.
+- Chrome 向けです。
+- `chatgpt.com` の画面構造に依存します。画面更新後はターン検出や切替動作が変わる可能性があります。
+- 非表示にしたターンを会話本文として操作する必要がある場合は、Keep を増やすか OFF にしてください。
+- 会話データのバックアップ、同期、削除は扱いません。
 
-### Initial-load rendering shield
+## 開発について
 
-The content script runs at `document_start`. While a long conversation is loading, LongChat Lite temporarily suppresses rendering of the conversation body, applies the **Keep** limit, and then reveals it. This is intended to reduce the cost of rendering the full history once before hiding older turns.
+個人プロジェクトです。作者は課題の整理、機能要件の決定、実装案の確認、動作確認、問題の調査と修正方針の判断を担当しています。実装と検証には AI コーディングツールを利用しています。
 
-### Lightweight background checking
+## 免責・ライセンス
 
-LongChat Lite does not use `MutationObserver`. It performs only a lightweight turn-count check every three seconds, and does no additional processing when the number of turns has not changed.
+LongChat Lite は OpenAI による提供・公認・提携製品ではありません。ChatGPT は OpenAI の商標です。
 
-This approach replaced the continuous DOM monitoring used in the v0.1 series, after that monitoring itself was found to add load.
-
-## Settings
-
-- **ON / OFF** enables or disables conversation-turn hiding.
-- **Keep** selects how many recent turns remain visible. **Keep 5** or **Keep 10** is recommended for especially long chats.
-- **Safe Switch** enables or disables full-page navigation when opening another conversation.
-- **Apply** immediately reapplies the current settings to the conversation.
-
-## Install
-
-1. Extract the ZIP.
-2. Open Chrome.
-3. Go to `chrome://extensions/`.
-4. Turn on **Developer mode**.
-5. Click **Load unpacked**.
-6. Select the extracted `longchat-lite-extension-v0.3.0` folder.
-7. Disable the old Tampermonkey LongChat Lite script to avoid running both versions at once.
-8. Reload `https://chatgpt.com/`.
-
-The bottom-right panel should show:
-
-`LONGCHAT LITE | ON | Keep 10 | Safe ON`
-
-## Notes
-
-This is an unofficial project and is not affiliated with or endorsed by OpenAI.
-
-ChatGPT is a trademark of OpenAI.
-
-LongChat Lite does not delete conversation data. It only changes how much of the conversation is rendered in the browser.
-
-ChatGPT's UI can change at any time, which may break this extension.
-
-## Development history
-
-- v0.2.0: Tampermonkey userscript version.
-- v0.3.0: Migrated from Tampermonkey to a Chrome Manifest V3 extension.
-
-## License
-
-MIT License. See `LICENSE`.
+MIT License。詳細は [LICENSE](LICENSE) を参照してください。
